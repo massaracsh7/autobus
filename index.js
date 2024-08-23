@@ -10,6 +10,7 @@ const port = 3000;
 const timeZone = "UTC";
 
 const app = express();
+app.use(express.static(path.join(__dirname, "public")));
 
 const loadBuses = async () => {
   const data = await readFile(path.join(__dirname, "buses.json"), "utf-8");
@@ -35,6 +36,11 @@ const getNextDeparture = (firstDepartureTime, frequencyMinutes) => {
   return departure;
 };
 
+const sortBuses = (buses) => 
+  [...buses].sort(
+    (a, b) => new Date(`${a.nextDeparture.date}T${a.nextDeparture.time}`) -
+      new Date(`${b.nextDeparture.date}T${b.nextDeparture.time}`)
+  );
 
 const sendUpdateData = async () => {
   try {
@@ -59,8 +65,8 @@ const sendUpdateData = async () => {
 app.get('/next-departure', async (req, res) => {
   try {
     const updatedBuses = await sendUpdateData();
-    console.log("Updated buses:", updatedBuses); // Отладочный вывод
-    res.json(updatedBuses);
+    const sortedBuses = sortBuses(updatedBuses);
+    res.json(sortedBuses);
   } catch (error) {
     console.error("Error in /next-departure route:", error);
     res.status(500).send("Internal Server Error");
