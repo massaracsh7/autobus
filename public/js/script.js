@@ -18,13 +18,13 @@ const renderBusData = (buses) => {
   tableBody.textContent = "";
   buses.forEach(bus => {
     const row = document.createElement('tr');
-
     const nextDepartureDateTimeUTC = new Date(`${bus.nextDeparture.date}T${bus.nextDeparture.time}Z`)
     row.innerHTML = `
     <td>${bus.busNumber}</td>
     <td>${bus.startPoint} - ${bus.endPoint}</td>
     <td>${formatDate(nextDepartureDateTimeUTC)}</td>
-    <td>${formatTime(nextDepartureDateTimeUTC)}</td>`;
+    <td>${formatTime(nextDepartureDateTimeUTC)}</td>
+    <td>${bus.nextDeparture.remaining}</td>`;
     tableBody.append(row);
   })
 }
@@ -38,11 +38,34 @@ const nowTime = () => {
   document.getElementById('time').textContent = currentTime;
 }
 
+const initWebSocket = () => {
+  const ws = new WebSocket(`ws://${location.host}`);
+
+  ws.addEventListener("open", () => {
+    console.log("WebSocket connection");
+  })
+
+  ws.addEventListener("message", (event) => {
+    const buses = JSON.parse(event.data);
+    renderBusData(buses);
+  })
+
+  ws.addEventListener("error", () => {
+    console.error("WebSocket error");
+  })
+
+  ws.addEventListener("close", () => {
+    console.error("WebSocket close");
+  })
+}
+
 const init = async () => {
   const buses = await fetchBusData();
   renderBusData(buses);
   nowTime();
   setInterval(nowTime, 1000);
+
+  initWebSocket();
 }  
 
 init();
